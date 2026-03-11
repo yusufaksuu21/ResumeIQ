@@ -22,6 +22,7 @@ defaults = {
     "aktif_gecmis_idx": None,
     "dil":              "🇹🇷 Türkçe",
     "tema_renk":        "#4f8ef7",
+    "soru_counter":     0,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -297,7 +298,14 @@ def cv_metin_oku(dosya):
 def sorgula(istem):
     """Gemini'ye istem gönderir, metin yanıt döndürür."""
     try:
-        yanit = istemci.models.generate_content(model=MODEL_ID, contents=[istem])
+        from google.genai import types
+        yanit = istemci.models.generate_content(
+            model=MODEL_ID,
+            contents=[istem],
+            config=types.GenerateContentConfig(
+                thinking_config=types.ThinkingConfig(thinking_budget=0)
+            )
+        )
         return yanit.text if yanit and yanit.text else "Yanıt alınamadı, lütfen tekrar deneyin."
     except Exception as e:
         return f"Bağlantı hatası: {e}"
@@ -542,15 +550,15 @@ with sekme1:
             "soru",
             placeholder="✨ " + ("Ask anything..." if is_en else "Hayalindeki kariyere giden yolu birlikte çizelim..."),
             label_visibility="collapsed",
-            key="soru_input",
+            key=f"soru_input_{st.session_state.soru_counter}",
         )
-        gonder = gb.button("➤ " + ("Ask" if is_en else "Sor"), use_container_width=True)
+        gonder = gb.button("➤ " + ("Gönder" if not is_en else "Submit"), use_container_width=True)
 
         if gonder and soru.strip():
-            soru = soru.strip()
-            st.session_state.mesajlar.append({"role": "user", "content": soru})
+            temiz_soru = soru.strip()
+            st.session_state.mesajlar.append({"role": "user", "content": temiz_soru})
             tesekkur = {"tesekkur","sagol","eyvallah","thanks","thank you","ok","super","harika"}
-            if any(k in soru.lower() for k in tesekkur) and len(soru) < 30:
+            if any(k in temiz_soru.lower() for k in tesekkur) and len(temiz_soru) < 30:
                 yanit = "Rica ederim! 🚀 Başka soruların olursa buradayım."
             else:
                 with st.spinner("🤖 " + ("Thinking..." if is_en else "Yanıt hazırlanıyor...")):
@@ -558,10 +566,10 @@ with sekme1:
                         f"{dil_talimat(st.session_state.dil)}\n"
                         f"Kariyer koçu olarak CV'ye dayanarak soruyu yanıtla. "
                         f"Net ve somut tavsiyeler ver.\n\n"
-                        f"CV:\n{st.session_state.cv_metni[:3000]}\n\nSoru: {soru}"
+                        f"CV:\n{st.session_state.cv_metni[:3000]}\n\nSoru: {temiz_soru}"
                     )
             st.session_state.mesajlar.append({"role": "assistant", "content": yanit})
-            st.session_state["soru_input"] = ""
+            st.session_state.soru_counter += 1
             st.rerun()
 
     else:
