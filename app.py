@@ -545,28 +545,30 @@ with sekme1:
                 st.markdown(m["content"])
 
         st.markdown("<div style='height:0.7rem'></div>", unsafe_allow_html=True)
-        gi, gb = st.columns([5, 1])
-        soru = gi.text_input(
-            "soru",
-            placeholder="✨ " + ("Ask anything..." if is_en else "Hayalindeki kariyere giden yolu birlikte çizelim..."),
-            label_visibility="collapsed",
-            key=f"soru_input_{st.session_state.soru_counter}",
-        )
-        gonder = gb.button("➤ " + ("Gönder" if not is_en else "Submit"), use_container_width=True)
+        with st.form(key=f"soru_form_{st.session_state.soru_counter}", clear_on_submit=True):
+            gi, gb = st.columns([5, 1])
+            soru = gi.text_input(
+                "soru",
+                placeholder="✨ " + ("Type a message..." if is_en else "Bir şeyler yaz..."),
+                label_visibility="collapsed",
+            )
+            gonder = gb.form_submit_button("➤ " + ("Gönder" if not is_en else "Submit"), use_container_width=True)
 
         if gonder and soru.strip():
             temiz_soru = soru.strip()
             st.session_state.mesajlar.append({"role": "user", "content": temiz_soru})
-            tesekkur = {"tesekkur","sagol","eyvallah","thanks","thank you","ok","super","harika"}
-            if any(k in temiz_soru.lower() for k in tesekkur) and len(temiz_soru) < 30:
-                yanit = "Rica ederim! 🚀 Başka soruların olursa buradayım."
+            tesekkur = {"teşekkür","tesekkur","teşekkürler","sagol","sağol","eyvallah","thanks","thank you","thx","ty","super","harika","ok","tamam","👍"}
+            if any(k in temiz_soru.lower() for k in tesekkur) and len(temiz_soru) < 40:
+                yanit = "Rica ederim! 😊 Başka sorun olursa buradayım." if not is_en else "You're welcome! 😊 Feel free to ask anything else."
             else:
                 with st.spinner("🤖 " + ("Thinking..." if is_en else "Yanıt hazırlanıyor...")):
                     yanit = sorgula(
                         f"{dil_talimat(st.session_state.dil)}\n"
-                        f"Kariyer koçu olarak CV'ye dayanarak soruyu yanıtla. "
-                        f"Net ve somut tavsiyeler ver.\n\n"
-                        f"CV:\n{st.session_state.cv_metni[:3000]}\n\nSoru: {temiz_soru}"
+                        f"Sen bir kariyer koçusun. Kullanıcının sorusunu SADECE soruyla ilgili, "
+                        f"kısa ve net şekilde yanıtla. Tekrar genel CV analizi yapma, "
+                        f"sadece sorulan konuya odaklan.\n\n"
+                        f"CV özeti (referans için):\n{st.session_state.cv_metni[:1500]}\n\n"
+                        f"Soru: {temiz_soru}"
                     )
             st.session_state.mesajlar.append({"role": "assistant", "content": yanit})
             st.session_state.soru_counter += 1
