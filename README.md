@@ -87,3 +87,5 @@ Software Engineering Student
 
 GitHub:  
 https://github.com/yusufaksuu21
+Canlı Demo:
+https://kariyer-planla.streamlit.app/
